@@ -21,11 +21,40 @@ upper_bounds = [58, 58, 58, 58, max(data[:, 4])]
 variables = variable_builder(var_names, initial_values, lower_bounds, upper_bounds)
 print(variables)
 
-# Defines objective functions: Average the sum of scenic beauty, roughness, safety, and slope
-def obj1(x):
-    y1 = (x[:, 0] + x[:, 1] + x[:, 2] + x[:, 3]) / 4
-    return y1
+def combined_obj(x, w_smoothness=1.0, w_safety=1.0, w_slope=1.0):#The objective is to maximize the combined score, so higher values indicate better solutions.
+    # Maximize smoothness (higher score means smoother path)
+    smoothness_score = x[:, 1]
 
+    # Minimize safety (lower score means safer routes)
+    safety_score = x[:, 2]
+
+    # Minimize slope (lower score means gentler slope)
+    slope_score = x[:, 3]
+
+    # Combine the objectives using weighted sum
+    combined_score = w_smoothness * smoothness_score - w_safety * safety_score - w_slope * slope_score
+
+    return combined_score
+
+# Objective function to minimize the average scenic beauty
+def obj_avg_scenic_beauty(x):
+    avg_scenic_beauty = np.mean(x[:, 0]) 
+    return -avg_scenic_beauty
+
+# Objective function to minimize safety (higher score means less safe)
+def obj_safety(x):
+    avg_safety_score = np.mean(x[:, 1]) 
+    return avg_safety_score
+
+# Objective function to maximize roughness
+def obj_roughness(x):
+    avg_roughness_score = np.mean(x[:, 2])
+    return -avg_roughness_score  # Negate to maximize
+
+# Objective function to minimize slope
+def obj_slope(x):
+    slope_score = np.mean(x[:, 3])
+    return slope_score
 
 # Minimize the distance
 def obj2(x):
@@ -33,14 +62,15 @@ def obj2(x):
     return y2
 
 # Creates objective functions with names and evaluators
-f1 = ScalarObjective(name="f1", evaluator=obj1)
-f2 = ScalarObjective(name="f2", evaluator=obj2)
+f1 = ScalarObjective(name="Maximize Smoothness", evaluator=combined_obj)
+f2 = ScalarObjective(name="Minimize Safety", evaluator=obj2)
 
 # Creates a list of objective functions
 list_objs = [f1, f2]
 
 # Defines constraint functions
 const_func = lambda x, y: -17 + (x[:, 0] + x[:, 1] + x[:, 2] + x[:, 3]) / 4
+#const_func = lambda x, y: -17 + ( x[:, 1] + x[:, 2] + x[:, 3]) / 3
 const_func2 = lambda x, y: value1 - (x[:, 4])
 
 # Creates constraints with names and evaluator functions

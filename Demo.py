@@ -23,7 +23,7 @@ print(variables)
 
 # Defines objective functions: Average the sum of scenic beauty, roughness, safety, and slope
 def obj1(x):
-    y1 = (x[:, 0] + x[:, 1] + x[:, 2] + x[:, 3]) / 4
+    y1 = -(x[:, 0] + x[:, 1] + x[:, 2] + x[:, 3]) / 4
     return y1
 
 
