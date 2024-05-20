@@ -1,7 +1,8 @@
-import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
-from desdeo_problem import ScalarObjective, ScalarConstraint, variable_builder, MOProblem
+from desdeo_problem import Variable, ScalarObjective, ScalarConstraint, ScalarMOProblem, variable_builder, MOProblem
 from pygmo import non_dominated_front_2d as nd2
+import matplotlib.pyplot as plt
 
 # Reads data from a CSV file
 data = np.load("output.npy", allow_pickle=True)
@@ -20,9 +21,8 @@ upper_bounds = [58, 58, 58, 58, max(data[:, 4])]
 variables = variable_builder(var_names, initial_values, lower_bounds, upper_bounds)
 print(variables)
 
-
-def combined_obj(x, w_smoothness=1.0, w_safety=1.0,
-                 w_slope=1.0):  # The objective is to maximize the combined score, so higher values indicate better solutions.
+#The objective is to maximize the combined score, so higher values indicate better solutions.
+def combined_obj(x, w_smoothness=1.0, w_safety=1.0, w_slope=1.0):
     # Maximize smoothness (higher score means smoother path)
     smoothness_score = x[:, 1]
 
@@ -37,47 +37,46 @@ def combined_obj(x, w_smoothness=1.0, w_safety=1.0,
 
     return combined_score
 
-
 # Objective function to minimize the average scenic beauty
 def obj_avg_scenic_beauty(x):
-    avg_scenic_beauty = x[:, 0]
+    avg_scenic_beauty = np.mean(x[:, 0]) 
     return -avg_scenic_beauty
-
 
 # Objective function to minimize safety (higher score means less safe)
 def obj_safety(x):
-    avg_safety_score = np.mean(x[:, 1])
+    avg_safety_score = np.mean(x[:, 1]) 
     return avg_safety_score
-
 
 # Objective function to maximize roughness
 def obj_roughness(x):
     avg_roughness_score = np.mean(x[:, 2])
     return -avg_roughness_score  # Negate to maximize
 
-
 # Objective function to minimize slope
 def obj_slope(x):
     slope_score = np.mean(x[:, 3])
     return slope_score
 
+# Objective function to minimize the average scenic beauty
+def obj_avg_scenic_beauty(x):
+    avg_scenic_beauty = x[:, 0]
+    return -avg_scenic_beauty
 
 # Minimize the distance
-def obj2(x):
+def distance(x):
     y2 = x[:, 4]
     return y2
 
-
 # Creates objective functions with names and evaluators
 f1 = ScalarObjective(name="Maximize Smoothness", evaluator=combined_obj)
-f2 = ScalarObjective(name="Minimize Safety", evaluator=obj2)
+f2 = ScalarObjective(name="Minimize Safety", evaluator=distance)
 
 # Creates a list of objective functions
 list_objs = [f1, f2]
 
 # Defines constraint functions
 const_func = lambda x, y: -17 + (x[:, 0] + x[:, 1] + x[:, 2] + x[:, 3]) / 4
-# const_func = lambda x, y: -17 + ( x[:, 1] + x[:, 2] + x[:, 3]) / 3
+#const_func = lambda x, y: -17 + ( x[:, 1] + x[:, 2] + x[:, 3]) / 3
 const_func2 = lambda x, y: value1 - (x[:, 4])
 
 # Creates constraints with names and evaluator functions
@@ -90,9 +89,10 @@ prob = MOProblem(objectives=list_objs, variables=variables, constraints=[cons1, 
 # Evaluates the problem with the data
 y = prob.evaluate(data[:, :5])
 
-# Pareto Front data
+#Pareto Front data
 data_pareto = nd2(y.objectives)
 y.objectives[data_pareto]
+
 
 # Extract the Pareto front from y.objectives using the indices obtained from data_pareto
 pareto_front = y.objectives[data_pareto]
